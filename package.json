@@ -1,0 +1,12 @@
+{
+  "name": "async_examples",
+  "private": true,
+  "scripts": {
+    "start": "meteor run"
+  },
+  "dependencies": {
+    "cls-bluebird": "^1.1.3",
+    "meteor-node-stubs": "~0.2.0",
+    "request-promise": "^3.0.0"
+  }
+}
