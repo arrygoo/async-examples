@@ -1,23 +1,18 @@
 import { Meteor } from 'meteor/meteor';
 const rp = require('request-promise');
 
-// Get JSON from API
-const getJSONfromAPI = (url, callback) => {
-  HTTP.call('GET', `http://jsonplaceholder.typicode.com/${url}`, {
-  }, (err, response) => {
-    if (err) {
-      callback(err);
-    } else {
-      callback(null, response.data);
-    }
-  });
+// Make request using callbacks
+function makeRequest(url, callback) {
+  HTTP.call('GET', `http://jsonplaceholder.typicode.com/${url}`, {},
+    (err, response) => callback(null, response.data)
+  );
 };
 
-// Using AsyncWrap
-const getJSONfromAPISync = Meteor.wrapAsync(getJSONfromAPI);
+// Make request using AsyncWrap
+const makeRequestSync = Meteor.wrapAsync(makeRequest);
 
-// Using promises
-const getJSONfromAPIPromise = (url) => {
+// Make request using promises
+const makeRequestPromise = (url) => {
   const options = {
     uri: `http://jsonplaceholder.typicode.com/${url}`,
     json: true,
@@ -28,19 +23,18 @@ const getJSONfromAPIPromise = (url) => {
 Meteor.startup(() => {
 
 /******* Example with callbackhell *******/
-  // Get the 5th user
   function getFirstCommentCallback() {
-    getJSONfromAPI(`users/5`, (userErr, userResults) => {
+    makeRequest(`users/1`, (userErr, userResults) => {
       if (userErr) {
         throw new Meteor.Error(userErr);
       }
       const userId = userResults.id;
-      getJSONfromAPI(`posts?userId=${userId}`, (postErr, postResults) => {
+      makeRequest(`posts?userId=${userId}`, (postErr, postResults) => {
         if (postErr) {
           throw new Meteor.Error(postErr);
         }
         const postId = postResults[0].id;
-        getJSONfromAPI(`posts/${postId}/comments`, (commentsErr, commentsResults) => {
+        makeRequest(`posts/${postId}/comments`, (commentsErr, commentsResults) => {
           if (commentsErr) {
             throw new Meteor.Error(commentsErr);
           }
@@ -57,61 +51,49 @@ Meteor.startup(() => {
   }
 
   function getUserFirstCommentFromPostId (postId) {
-    getJSONfromAPI(`posts/${postId}/comments`, (err, results) => {
+    makeRequest(`posts/${postId}/comments`, (err, results) => {
       handleErr(err);
       console.log(results[0]);
     });
   };
 
   function getFirstCommentFromUserId(userId) {
-    getJSONfromAPI(`posts?userId=${userId}`, (err, results) => {
+    makeRequest(`posts?userId=${userId}`, (err, results) => {
       handleErr(err);
       getUserFirstCommentFromPostId(results[0].id);
     });
   };
 
   function getFirstCommentImrpovedCallback() {
-    getJSONfromAPI(`users/5`, (err, results) => {
+    makeRequest(`users/1`, (err, results) => {
       handleErr(err);
       getFirstCommentFromUserId(results.id);
     });
   }
-
   /******* End of example improved callback *******/
 
 
-  // /******* Example with caolon:async *******/
+  /******* Example with caolon:async *******/
   function getFirstCommentCaolonAsync() {
     async.waterfall([
-      (callback) => {
-        getJSONfromAPI(`users/5`, (err, results) => {
-          callback(err, results.id);
-        });
-      },
-      (userId, callback) => {
-        getJSONfromAPI(`posts?userId=${userId}`, (err, results) => {
-          callback(err, results[0].id);
-        });
-      },
-      (postId, callback) => {
-        getJSONfromAPI(`posts/${postId}/comments`, (err, results) => {
-          callback(err, results);
-        });
-      },
-    ], (err, results) => {
+      (callback) => makeRequest(`users/1`, callback),
+      (userResults, callback) => makeRequest(`posts?userId=${userResults.id}`, callback),
+      (postResults, callback) => makeRequest(`posts/${postResults.id}/comments`, callback),
+
+    ], (err, comments) => {
       if (err) {
         throw new Meteor.Error(err);
       }
-      console.log(results[0]);
+      console.log(comments[0]);
     });
   }
-  // /******* End of caolon:async *******/
-  //
+  /******* End of caolon:async *******/
+
   /******* Example with promises *******/
-  function getFirstCommentPromises(){
-    getJSONfromAPIPromise(`users/5`)
-    .then(results => getJSONfromAPIPromise(`posts?userId=${results.id}`))
-    .then(results => getJSONfromAPIPromise(`posts/${results[0].id}/comments`))
+  function getFirstCommentPromises() {
+    makeRequestPromise(`users/1`)
+    .then(results => makeRequestPromise(`posts?userId=${results.id}`))
+    .then(results => makeRequestPromise(`posts/${results[0].id}/comments`))
     .then(results => console.log(results[0]))
     .catch(err => {
       throw new Meteor.Error(err);
