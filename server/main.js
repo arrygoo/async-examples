@@ -103,11 +103,11 @@ Meteor.startup(() => {
 
 
   /******* Example with async/await and promises *******/
-  async function getFirstCommentAsyncAwait(){
+  async function getFirstCommentAsyncAwait() {
     try {
-      userResults = await getJSONfromAPIPromise(`users/5`);
-      postResults = await getJSONfromAPIPromise(`posts?userId=${userResults.id}`);
-      comments = await getJSONfromAPIPromise(`posts/${postResults[0].id}/comments`);
+      userResults = await makeRequestPromise(`users/1`);
+      postResults = await makeRequestPromise(`posts?userId=${userResults.id}`);
+      comments = await makeRequestPromise(`posts/${postResults[0].id}/comments`);
       console.log(comments[0]);
     } catch (err) {
       throw new Meteor.Error(err);
@@ -118,9 +118,9 @@ Meteor.startup(() => {
   /******** Example using wrapAsync ********/
   function getFirstCommentWrapAsync() {
     try {
-      userResults = getJSONfromAPISync(`users/5`);
-      postResults = getJSONfromAPISync(`posts?userId=${userResults.id}`);
-      comments = getJSONfromAPISync(`posts/${postResults[0].id}/comments`);
+      userResults = makeRequestSync(`users/1`);
+      postResults = makeRequestSync(`posts?userId=${userResults.id}`);
+      comments = makeRequestSync(`posts/${postResults[0].id}/comments`);
       console.log(comments[0]);
     } catch (err) {
       throw new Meteor.Error(err);
@@ -128,8 +128,37 @@ Meteor.startup(() => {
   }
   /******** End of wrapAsync *******/
 
+  /******** printTwoAsync and printTwoSync *******/
+  function printTwoAsync() {
+    makeRequest(`posts?userId=2`, (err, results) => {
+      console.log(results[0].userId);
+    });
+  }
+
+  function printTwoSync() {
+    console.log("2");
+  }
+
+  function demoIONonBlock(){
+    console.log('1');
+    printTwoAsync();
+    console.log('3');
+  }
+
+  function demoIOBlock(){
+    console.log('1');
+    printTwoSync();
+    console.log('3');
+  }
+  /******** End of printTwoAsync and printTwoSync *******/
+
+
   // Uncomment one of the below to see the example running:
-  getFirstCommentCallback();
+
+  // demoIONonBlock();
+  // demoIOBlock();
+
+  // getFirstCommentCallback();
   // getFirstCommentImrpovedCallback();
   // getFirstCommentCaolonAsync();
   // getFirstCommentPromises();
